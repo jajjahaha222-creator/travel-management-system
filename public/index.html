@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TravelEase — Find Your Perfect Trip</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="logo">✈ TravelEase</a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="packages.html">Packages</a></li>
+    <li><a href="bookings.html">My Bookings</a></li>
+    <li id="authSection">
+      <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+    </li>
+  </ul>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="hero">
+  <h1>Find Your Perfect Journey</h1>
+  <p>Explore amazing travel packages — book in seconds</p>
+  <a href="packages.html" class="btn btn-primary" style="font-size:1rem;padding:12px 28px;">
+    Browse Packages
+  </a>
+</section>
+
+<!-- FEATURED PACKAGES SECTION -->
+<div class="container">
+  <div class="section-header">
+    <h2>Featured Packages</h2>
+    <a href="packages.html" class="btn btn-outline btn-sm">View All</a>
+  </div>
+  
+  <div id="featuredPackages" class="card-grid">
+    <div class="loading">Loading packages...</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2025 TravelEase. Built with Node.js, Express & MongoDB.</p>
+</footer>
+
+<script>
+  // ── AUTH STATE ─────────────────────────────────────────────────────
+  // Check if user is logged in (token stored in localStorage)
+  const token = localStorage.getItem('token')
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
+
+  // Update navbar based on auth state
+  if (token && user) {
+    document.getElementById('authSection').innerHTML = `
+      <span style="color:#ccc;font-size:0.9rem">Hi, ${user.name}</span>
+      <button onclick="logout()" class="btn btn-outline btn-sm" style="margin-left:10px">Logout</button>
+    `
+  }
+
+  function logout() {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.location.reload()
+  }
+
+  // ── FETCH FEATURED PACKAGES ────────────────────────────────────────
+  async function loadFeaturedPackages() {
+    try {
+      // fetch() is the browser's built-in tool to call APIs
+      const response = await fetch('/api/packages')
+      const data = await response.json()
+
+      const container = document.getElementById('featuredPackages')
+
+      if (!data.success || data.packages.length === 0) {
+        container.innerHTML = '<div class="empty-state"><h3>No packages available yet</h3></div>'
+        return
+      }
+
+      // Show only first 3 packages on homepage
+      const featured = data.packages.slice(0, 3)
+
+      container.innerHTML = featured.map(pkg => `
+        <div class="package-card">
+          <img src="${pkg.image}" alt="${pkg.title}" onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=600'" />
+          <div class="card-body">
+            <h3>${pkg.title}</h3>
+            <div class="destination">📍 ${pkg.destination}</div>
+            <p style="font-size:0.85rem;color:#666;margin-bottom:0.75rem">
+              ${pkg.description.substring(0, 100)}...
+            </p>
+            <div class="card-meta">
+              <span>⏱ ${pkg.duration} days</span>
+              <span class="seats">✓ ${pkg.availableSeats} seats left</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.75rem">
+              <div class="price">₹${pkg.price.toLocaleString()}</div>
+              <a href="packages.html" class="btn btn-primary btn-sm">Book Now</a>
+            </div>
+          </div>
+        </div>
+      `).join('')
+    } catch (error) {
+      document.getElementById('featuredPackages').innerHTML = 
+        '<div class="empty-state"><h3>Failed to load packages</h3></div>'
+    }
+  }
+
+  loadFeaturedPackages()
+</script>
+</body>
+</html>

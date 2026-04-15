@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — TravelEase</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="logo">✈ TravelEase</a>
+  <ul class="nav-links">
+    <li><a href="packages.html">Packages</a></li>
+    <li><a href="index.html">Home</a></li>
+  </ul>
+</nav>
+
+<!-- TAB SWITCHER -->
+<div style="text-align:center;margin-top:2rem">
+  <button class="btn btn-primary" id="tabLogin" onclick="showTab('login')">Login</button>
+  <button class="btn btn-outline" id="tabRegister" onclick="showTab('register')" style="margin-left:10px">Register</button>
+</div>
+
+<!-- LOGIN FORM -->
+<div class="form-container" id="loginForm">
+  <h2>Welcome Back</h2>
+  
+  <div class="alert alert-error" id="loginError"></div>
+  <div class="alert alert-success" id="loginSuccess"></div>
+
+  <div class="form-group">
+    <label>Email Address</label>
+    <input type="email" id="loginEmail" placeholder="you@example.com" />
+  </div>
+  <div class="form-group">
+    <label>Password</label>
+    <input type="password" id="loginPassword" placeholder="Your password" />
+  </div>
+  <button class="btn btn-primary" style="width:100%" onclick="handleLogin()">Login</button>
+  
+  <p style="text-align:center;margin-top:1rem;font-size:0.9rem;color:#666">
+    Don't have an account? <a href="#" onclick="showTab('register')" style="color:#e94560">Register</a>
+  </p>
+</div>
+
+<!-- REGISTER FORM -->
+<div class="form-container" id="registerForm" style="display:none">
+  <h2>Create Account</h2>
+  
+  <div class="alert alert-error" id="registerError"></div>
+  <div class="alert alert-success" id="registerSuccess"></div>
+
+  <div class="form-group">
+    <label>Full Name</label>
+    <input type="text" id="regName" placeholder="Shruti Solanki" />
+  </div>
+  <div class="form-group">
+    <label>Email Address</label>
+    <input type="email" id="regEmail" placeholder="you@example.com" />
+  </div>
+  <div class="form-group">
+    <label>Password (min 6 characters)</label>
+    <input type="password" id="regPassword" placeholder="Create a password" />
+  </div>
+  <button class="btn btn-primary" style="width:100%" onclick="handleRegister()">Create Account</button>
+
+  <p style="text-align:center;margin-top:1rem;font-size:0.9rem;color:#666">
+    Already have an account? <a href="#" onclick="showTab('login')" style="color:#e94560">Login</a>
+  </p>
+</div>
+
+<footer>
+  <p>© 2025 TravelEase</p>
+</footer>
+
+<script>
+  // If already logged in, redirect to homepage
+  if (localStorage.getItem('token')) {
+    window.location.href = 'index.html'
+  }
+
+  // ── TAB SWITCHER ──────────────────────────────────────────────────
+  function showTab(tab) {
+    const loginForm = document.getElementById('loginForm')
+    const registerForm = document.getElementById('registerForm')
+    const tabLogin = document.getElementById('tabLogin')
+    const tabRegister = document.getElementById('tabRegister')
+
+    if (tab === 'login') {
+      loginForm.style.display = 'block'
+      registerForm.style.display = 'none'
+      tabLogin.className = 'btn btn-primary'
+      tabRegister.className = 'btn btn-outline'
+    } else {
+      loginForm.style.display = 'none'
+      registerForm.style.display = 'block'
+      tabLogin.className = 'btn btn-outline'
+      tabRegister.className = 'btn btn-primary'
+    }
+  }
+
+  // ── SHOW ALERT HELPER ─────────────────────────────────────────────
+  function showAlert(elementId, message, type = 'error') {
+    const el = document.getElementById(elementId)
+    el.textContent = message
+    el.className = `alert alert-${type}`
+    el.style.display = 'block'
+    // Auto-hide after 5 seconds
+    setTimeout(() => { el.style.display = 'none' }, 5000)
+  }
+
+  // ── HANDLE LOGIN ──────────────────────────────────────────────────
+  async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim()
+    const password = document.getElementById('loginPassword').value
+
+    if (!email || !password) {
+      return showAlert('loginError', 'Please fill in all fields')
+    }
+
+    try {
+      // Call our login API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })  // Convert JS object to JSON string
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Save token and user info to localStorage
+        // localStorage = browser storage that persists across page refreshes
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        
+        showAlert('loginSuccess', 'Login successful! Redirecting...', 'success')
+        setTimeout(() => { window.location.href = 'packages.html' }, 1000)
+      } else {
+        showAlert('loginError', data.message)
+      }
+    } catch (error) {
+      showAlert('loginError', 'Connection error. Is the server running?')
+    }
+  }
+
+  // ── HANDLE REGISTER ───────────────────────────────────────────────
+  async function handleRegister() {
+    const name = document.getElementById('regName').value.trim()
+    const email = document.getElementById('regEmail').value.trim()
+    const password = document.getElementById('regPassword').value
+
+    if (!name || !email || !password) {
+      return showAlert('registerError', 'Please fill in all fields')
+    }
+
+    if (password.length < 6) {
+      return showAlert('registerError', 'Password must be at least 6 characters')
+    }
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        showAlert('registerSuccess', 'Account created! Redirecting...', 'success')
+        setTimeout(() => { window.location.href = 'packages.html' }, 1000)
+      } else {
+        showAlert('registerError', data.message)
+      }
+    } catch (error) {
+      showAlert('registerError', 'Connection error. Is the server running?')
+    }
+  }
+
+  // Allow pressing Enter to submit
+  document.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const activeForm = document.getElementById('loginForm').style.display !== 'none'
+        ? 'login' : 'register'
+      if (activeForm === 'login') handleLogin()
+      else handleRegister()
+    }
+  })
+</script>
+</body>
+</html>
