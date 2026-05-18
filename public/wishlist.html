@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Wishlist — TravelEase</title><link rel="stylesheet" href="css/style.css"/></head>
+<body>
+<div class="cursor"><div class="cursor-dot" style="position:fixed"></div></div>
+<div class="cursor"><div class="cursor-ring" style="position:fixed"></div></div>
+<nav class="navbar scrolled"><a href="index.html" class="logo">Travel<span>Ease</span></a><ul class="nav-links"><li><a href="packages.html">Destinations</a></li><ul id="navAuth" style="display:contents"></ul></ul></nav>
+<div style="height:72px"></div>
+<div class="container" style="padding-top:2.5rem">
+  <div style="margin-bottom:2rem"><div class="section-label">♥ Saved</div><h2 class="section-title">My <em>Wishlist</em></h2></div>
+  <div id="wishGrid" class="packages-grid"></div>
+</div>
+<script src="js/app.js"></script>
+<script>
+if(!getToken()){window.location.href='login.html'}
+async function load(){
+  const{data}=await apiFetch('/api/wishlist')
+  const el=document.getElementById('wishGrid')
+  if(!data.success||!data.wishlist.length){
+    el.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><h3>Your wishlist is empty</h3><p>Click the heart on any package to save it</p><a href="packages.html" class="btn btn-gold" style="margin-top:1.5rem">Explore Destinations</a></div>`
+    return
+  }
+  el.innerHTML=data.wishlist.map(p=>`
+    <div class="pkg-card reveal">
+      <div class="pkg-img-wrap">
+        <img src="${p.image}" alt="${p.title}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800'"/>
+        <div class="wish-btn active" data-pkgid="${p._id}" onclick="toggleWishlist('${p._id}',this).then(load)"></div>
+      </div>
+      <div class="pkg-body">
+        <div class="pkg-dest">📍 ${p.destination}</div>
+        <div class="pkg-title">${p.title}</div>
+        <div class="pkg-meta" style="margin-top:1rem">
+          <div class="pkg-price"><sup>₹</sup>${p.price.toLocaleString('en-IN')}</div>
+          <a href="packages.html?book=${p._id}" class="btn btn-gold btn-sm">Book Now</a>
+        </div>
+      </div>
+    </div>
+  `).join('')
+  initReveal()
+}
+document.addEventListener('DOMContentLoaded',load)
+</script>
+</body></html>

@@ -19,7 +19,10 @@ dotenv.config()
 const authRoutes = require('./routes/authRoutes')
 const packageRoutes = require('./routes/packageRoutes')
 const bookingRoutes = require('./routes/bookingRoutes')
-
+const wishlistRoutes = require('./routes/wishlistRoutes')
+const couponRoutes = require('./routes/couponRoutes')
+const adminRoutes = require('./routes/adminRoutes')
+const newsletterRoutes = require('./routes/newsletterRoutes')
 // Create the Express application
 const app = express()
 
@@ -41,35 +44,23 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.use('/api/auth', authRoutes)
 app.use('/api/packages', packageRoutes)
 app.use('/api/bookings', bookingRoutes)
+app.use('/api/wishlist', wishlistRoutes)
+app.use('/api/coupons', couponRoutes)
+app.use('/api/admin', adminRoutes)
+app.use('/api/newsletter', newsletterRoutes)
 
 // ─── ROOT ROUTE ────────────────────────────────────────────────────
 // When someone visits http://localhost:5000/api
 // This is just a health check
-app.get('/api', (req, res) => {
-  res.json({ 
-    message: 'Travel Management System API is running!',
-    status: 'OK'
-  })
-})
 
-// ─── GLOBAL ERROR HANDLER ──────────────────────────────────────────
-// If any route throws an error, this catches it
-// The 4 parameters (err, req, res, next) tell Express this is an error handler
+app.get('/api', (req, res) => res.json({ message: 'TravelEase API v2.0', status: 'OK' }))
+
 app.use((err, req, res, next) => {
-  console.error(err.stack)
-  res.status(500).json({ 
-    success: false, 
-    message: err.message || 'Something went wrong on the server' 
-  })
+  console.error('Error:', err.message)
+  res.status(err.statusCode || 500).json({ success: false, message: err.message || 'Server error' })
 })
 
-// ─── START SERVER ──────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000
-
-// First connect to database, THEN start listening for requests
 connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`✅ Server running on http://localhost:${PORT}`)
-    console.log(`📡 API available at http://localhost:${PORT}/api`)
-  })
+  app.listen(PORT, () => console.log(`✅ Server on http://localhost:${PORT}`))
 })

@@ -116,4 +116,28 @@ const getMe = async (req, res, next) => {
   }
 }
 
-module.exports = { register, login, getMe }
+const updateProfile = async (req, res, next) => {
+  try {
+    const { name, phone, country, bio, avatar } = req.body
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { name, phone, country, bio, avatar },
+      { new: true, runValidators: true }
+    )
+    res.json({ success: true, user })
+  } catch (err) { next(err) }
+}
+
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body
+    const user = await User.findById(req.user.id).select('+password')
+    const isMatch = await user.matchPassword(currentPassword)
+    if (!isMatch) return res.status(401).json({ success: false, message: 'Current password is incorrect' })
+    user.password = newPassword
+    await user.save()
+    res.json({ success: true, message: 'Password changed successfully' })
+  } catch (err) { next(err) }
+}
+
+module.exports = { register, login, getMe, updateProfile, changePassword }

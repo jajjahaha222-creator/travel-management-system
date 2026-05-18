@@ -1,50 +1,31 @@
-// models/Package.js
-// Defines the structure of a travel package
-
 const mongoose = require('mongoose')
 
 const packageSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: [true, 'Package title is required'],
-      trim: true
-    },
-    destination: {
-      type: String,
-      required: [true, 'Destination is required'],
-      trim: true
-    },
-    description: {
-      type: String,
-      required: [true, 'Description is required']
-    },
-    duration: {
-      type: Number,
-      required: [true, 'Duration in days is required'],
-      min: [1, 'Duration must be at least 1 day']
-    },
-    price: {
-      type: Number,
-      required: [true, 'Price is required'],
-      min: [0, 'Price cannot be negative']
-    },
-    availableSeats: {
-      type: Number,
-      required: [true, 'Available seats is required'],
-      min: [0, 'Available seats cannot be negative']
-    },
+    title: { type: String, required: true, trim: true },
+    destination: { type: String, required: true, trim: true },
+    description: { type: String, required: true },
+    duration: { type: Number, required: true, min: 1 },
+    price: { type: Number, required: true, min: 0 },
+    availableSeats: { type: Number, required: true, min: 0 },
+    totalSeats: { type: Number },   // track original capacity
     image: {
       type: String,
-      default: 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=600'
+      default: 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800'
     },
-    isActive: {
-      type: Boolean,
-      default: true  // Package is active by default
+    images: [String],               // gallery
+    category: {
+      type: String,
+      enum: ['beach', 'mountain', 'city', 'adventure', 'cultural', 'wildlife', 'luxury'],
+      default: 'city'
     },
+    tags: [String],                 // e.g. ['family', 'honeymoon', 'solo']
+    highlights: [String],           // bullet points shown on card
+    averageRating: { type: Number, default: 0 },
+    numReviews: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
+    isFeatured: { type: Boolean, default: false },
     createdBy: {
-      // This stores a REFERENCE to a User document
-      // Instead of copying the user's data, we store their ID
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true
@@ -53,6 +34,7 @@ const packageSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-const Package = mongoose.model('Package', packageSchema)
+// Text index for search
+packageSchema.index({ title: 'text', destination: 'text', description: 'text', tags: 'text' })
 
-module.exports = Package
+module.exports = mongoose.model('Package', packageSchema)

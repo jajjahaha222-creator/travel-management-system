@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Admin Dashboard — TravelEase</title>
+<link rel="stylesheet" href="css/style.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<nav class="navbar scrolled"><a href="index.html" class="logo">Travel<span>Ease</span></a><ul class="nav-links"><li><a href="packages.html">Packages</a></li><ul id="navAuth" style="display:contents"></ul></ul></nav>
+<div style="height:72px"></div>
+<div class="container" style="padding-top:2.5rem">
+  <div style="margin-bottom:2rem"><div class="section-label">⚙ Admin</div><h2 class="section-title">Dashboard <em>Overview</em></h2></div>
+
+  <div class="dash-stats" id="dashStats">
+    <div class="dash-stat"><div class="dash-stat-label">Total Revenue</div><div class="dash-stat-value" id="sRev">—</div></div>
+    <div class="dash-stat"><div class="dash-stat-label">Total Bookings</div><div class="dash-stat-value" id="sBk">—</div></div>
+    <div class="dash-stat"><div class="dash-stat-label">Users</div><div class="dash-stat-value" id="sUsr">—</div></div>
+    <div class="dash-stat"><div class="dash-stat-label">Packages</div><div class="dash-stat-value" id="sPkg">—</div></div>
+    <div class="dash-stat"><div class="dash-stat-label">Reviews</div><div class="dash-stat-value" id="sRev2">—</div></div>
+    <div class="dash-stat"><div class="dash-stat-label">Newsletter Subs</div><div class="dash-stat-value" id="sNl">—</div></div>
+  </div>
+
+  <!-- Coupon manager -->
+  <div class="dash-card" style="margin-bottom:1.5rem">
+    <h3>Create Coupon</h3>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end">
+      <div class="form-group" style="margin:0"><label>Code</label><input type="text" id="cpCode" placeholder="SUMMER30" style="width:140px;text-transform:uppercase"/></div>
+      <div class="form-group" style="margin:0"><label>Discount %</label><input type="number" id="cpDisc" placeholder="20" min="1" max="100" style="width:100px"/></div>
+      <div class="form-group" style="margin:0"><label>Max uses</label><input type="number" id="cpMax" placeholder="50" style="width:100px"/></div>
+      <div class="form-group" style="margin:0"><label>Expires</label><input type="date" id="cpExp"/></div>
+      <button class="btn btn-gold btn-sm" onclick="createCoupon()">Create</button>
+    </div>
+    <div class="alert alert-error" id="cpError" style="margin-top:0.75rem"></div>
+    <div class="alert alert-success" id="cpSuccess" style="margin-top:0.75rem"></div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="dash-card">
+      <h3>Monthly Revenue</h3>
+      <canvas id="revenueChart" height="200"></canvas>
+    </div>
+    <div class="dash-card">
+      <h3>Top Packages</h3>
+      <canvas id="topChart" height="200"></canvas>
+    </div>
+    <div class="dash-card" style="grid-column:1/-1">
+      <h3>Recent Bookings</h3>
+      <div id="recentBookings"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+if(!getToken()||getUser()?.role!=='admin'){window.location.href='index.html'}
+
+const chartDefaults = {
+  color: '#9E9BA8',
+  plugins: { legend: { labels: { color: '#9E9BA8', font: { family: 'DM Sans' } } } },
+  scales: {
+    x: { ticks: { color: '#5C596A' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+    y: { ticks: { color: '#5C596A' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+  }
+}
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+async function loadDash(){
+  const{data}=await apiFetch('/api/admin/stats')
+  if(!data.success)return
+  const s=data.stats
+  document.getElementById('sRev').textContent  = fmt(s.totalRevenue)
+  document.getElementById('sBk').textContent   = s.totalBookings
+  document.getElementById('sUsr').textContent  = s.totalUsers
+  document.getElementById('sPkg').textContent  = s.totalPackages
+  document.getElementById('sRev2').textContent = s.totalReviews
+  document.getElementById('sNl').textContent   = s.newsletterCount
+
+  // Revenue chart
+  const months = s.monthlyRevenue.map(m=>MONTHS[m._id.month-1]+' '+m._id.year)
+  const revs   = s.monthlyRevenue.map(m=>m.revenue)
+  new Chart(document.getElementById('revenueChart'),{
+    type:'bar',
+    data:{ labels:months, datasets:[{ label:'Revenue (₹)', data:revs, backgroundColor:'rgba(201,168,76,0.4)', borderColor:'#C9A84C', borderWidth:1, borderRadius:4 }] },
+    options:{ ...chartDefaults, responsive:true }
+  })
+
+  // Top packages chart
+  new Chart(document.getElementById('topChart'),{
+    type:'doughnut',
+    data:{
+      labels: s.topPackages.map(p=>p.title),
+      datasets:[{ data: s.topPackages.map(p=>p.bookingCount), backgroundColor:['#C9A84C','#4F8EF7','#4CAF7D','#E85D5D','#9B59B6'], borderWidth:0 }]
+    },
+    options:{ responsive:true, plugins:{ legend:{ position:'right', labels:{ color:'#9E9BA8', font:{family:'DM Sans'} } } } }
+  })
+
+  // Recent bookings
+  document.getElementById('recentBookings').innerHTML=`
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+      <thead><tr style="color:var(--text-muted);text-align:left">${['User','Package','Amount','Date','Status'].map(h=>`<th style="padding:8px 12px;border-bottom:1px solid var(--glass-border)">${h}</th>`).join('')}</tr></thead>
+      <tbody>${s.recentBookings.map(b=>`
+        <tr style="border-bottom:1px solid var(--glass-border)">
+          <td style="padding:10px 12px;color:var(--text-primary)">${b.user?.name||'—'}</td>
+          <td style="padding:10px 12px;color:var(--text-secondary)">${b.package?.title||'—'}</td>
+          <td style="padding:10px 12px;color:var(--gold)">${fmt(b.totalAmount)}</td>
+          <td style="padding:10px 12px;color:var(--text-muted)">${fmtDate(b.createdAt)}</td>
+          <td style="padding:10px 12px"><span class="status-badge status-${b.status}">${b.status}</span></td>
+        </tr>
+      `).join('')}</tbody>
+    </table></div>
+  `
+}
+
+async function createCoupon(){
+  const body={
+    code:document.getElementById('cpCode').value.trim().toUpperCase(),
+    discountPercent:+document.getElementById('cpDisc').value,
+    maxUses:+document.getElementById('cpMax').value||100,
+    expiresAt:document.getElementById('cpExp').value
+  }
+  if(!body.code||!body.discountPercent||!body.expiresAt)return showAlert('cpError','All coupon fields required')
+  const{data}=await apiFetch('/api/coupons',{method:'POST',body:JSON.stringify(body)})
+  if(data.success)showAlert('cpSuccess',`Coupon ${data.coupon.code} created!`,'success')
+  else showAlert('cpError',data.message)
+}
+
+document.addEventListener('DOMContentLoaded',loadDash)
+</script>
+</body></html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Reviews — TravelEase</title><link rel="stylesheet" href="css/style.css"/></head>
+<body>
+<nav class="navbar scrolled"><a href="index.html" class="logo">Travel<span>Ease</span></a><ul class="nav-links"><li><a href="packages.html">Destinations</a></li><ul id="navAuth" style="display:contents"></ul></ul></nav>
+<div style="height:72px"></div>
+<div class="container" style="padding-top:2.5rem;max-width:860px">
+  <a href="packages.html" style="color:var(--gold);text-decoration:none;font-size:0.85rem">← Back to packages</a>
+  <div style="margin:1.5rem 0 2rem"><div id="pkgTitle" class="section-title"></div></div>
+  
+  <!-- Write Review (only if logged in) -->
+  <div id="reviewForm" style="background:var(--dark-2);border:1px solid var(--glass-border);border-radius:var(--radius);padding:1.5rem;margin-bottom:2rem;display:none">
+    <h3 style="font-family:var(--ff-display);font-size:1.3rem;margin-bottom:1rem">Write a Review</h3>
+    <div class="alert alert-error" id="reviewError"></div>
+    <div class="alert alert-success" id="reviewSuccess"></div>
+    <div class="form-group"><label>Your rating</label>
+      <div class="star-input">
+        <input type="radio" name="rating" id="s5" value="5"/><label for="s5">★</label>
+        <input type="radio" name="rating" id="s4" value="4"/><label for="s4">★</label>
+        <input type="radio" name="rating" id="s3" value="3"/><label for="s3">★</label>
+        <input type="radio" name="rating" id="s2" value="2"/><label for="s2">★</label>
+        <input type="radio" name="rating" id="s1" value="1"/><label for="s1">★</label>
+      </div>
+    </div>
+    <div class="form-group"><label>Review title</label><input type="text" id="reviewTitle" placeholder="Summarise your experience"/></div>
+    <div class="form-group"><label>Your review</label><textarea id="reviewBody" placeholder="Tell others what you loved…" style="min-height:120px"></textarea></div>
+    <button class="btn btn-gold" onclick="submitReview()">Post Review</button>
+  </div>
+
+  <div id="reviewsList" class="reviews-grid"></div>
+</div>
+<script src="js/app.js"></script>
+<script>
+const params = new URLSearchParams(location.search)
+const pkgId = params.get('pkg')
+const pkgTitle = decodeURIComponent(params.get('title')||'')
+document.getElementById('pkgTitle').innerHTML = `Reviews: <em>${pkgTitle}</em>`
+if(getToken()) document.getElementById('reviewForm').style.display='block'
+
+async function loadReviews(){
+  const{data}=await apiFetch(`/api/packages/${pkgId}/reviews`)
+  const el=document.getElementById('reviewsList')
+  if(!data.success||!data.reviews.length){
+    el.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><h3>No reviews yet</h3><p>Be the first to share your experience!</p></div>`
+    return
+  }
+  el.innerHTML=data.reviews.map(r=>{
+    const init=r.user?.name?.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?'
+    return`<div class="review-card reveal">
+      <div class="review-header">
+        <div class="reviewer-info">
+          <div class="reviewer-avatar">${init}</div>
+          <div><div class="reviewer-name">${r.user?.name||'Traveller'}</div><div class="review-date">${fmtDate(r.createdAt)}</div></div>
+        </div>
+        <div class="stars">${renderStars(r.rating)}</div>
+      </div>
+      <div class="review-title">${r.title}</div>
+      <div class="review-body">${r.body}</div>
+    </div>`
+  }).join('')
+  initReveal()
+}
+
+async function submitReview(){
+  const rating=document.querySelector('input[name="rating"]:checked')?.value
+  const title=document.getElementById('reviewTitle').value.trim()
+  const body=document.getElementById('reviewBody').value.trim()
+  if(!rating||!title||!body) return showAlert('reviewError','Please fill all fields and select a rating')
+  const{data}=await apiFetch(`/api/packages/${pkgId}/reviews`,{method:'POST',body:JSON.stringify({rating:+rating,title,body})})
+  if(data.success){showAlert('reviewSuccess','Review posted! Thank you.','success');loadReviews()}
+  else showAlert('reviewError',data.message)
+}
+document.addEventListener('DOMContentLoaded',loadReviews)
+</script>
+</body></html>

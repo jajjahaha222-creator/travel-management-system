@@ -1,332 +1,676 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Travel Packages — TravelEase</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Destinations — TravelEase</title>
+  <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
 
-<nav class="navbar">
-  <a href="index.html" class="logo">✈ TravelEase</a>
-  <ul class="nav-links" id="navLinks">
-    <li><a href="packages.html">Packages</a></li>
-    <li><a href="bookings.html">My Bookings</a></li>
-    <li id="authSection"><a href="login.html" class="btn btn-outline btn-sm">Login</a></li>
+<div class="cursor"><div class="cursor-dot" style="position:fixed"></div></div>
+<div class="cursor"><div class="cursor-ring" style="position:fixed"></div></div>
+
+<nav class="navbar scrolled">
+  <a href="index.html" class="logo">Travel<span>Ease</span></a>
+  <ul class="nav-links">
+    <li><a href="packages.html">Destinations</a></li>
+    <ul id="navAuth" style="display:contents"></ul>
   </ul>
 </nav>
 
-<div class="container">
-  <div class="section-header">
-    <h2>All Travel Packages</h2>
-    <!-- Admin-only button — shown only when user.role === 'admin' -->
-    <button class="btn btn-primary btn-sm" id="addPackageBtn" 
-      style="display:none" onclick="openAddModal()">
-      + Add Package
-    </button>
+<div style="height:72px"></div>
+
+<div class="container" style="padding-top:2.5rem">
+
+  <!-- Search & Sort Bar -->
+  <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Search destinations, packages…"
+      style="flex:1;min-width:200px;background:var(--dark-2);border:1px solid var(--glass-border);border-radius:var(--radius-pill);padding:11px 18px;font-family:var(--ff-body);font-size:0.9rem;color:var(--text-primary);outline:none"
+      oninput="debounceSearch()"
+    />
+    <select
+      id="sortSel"
+      onchange="loadPackages()"
+      style="background:var(--dark-2);border:1px solid var(--glass-border);border-radius:var(--radius-pill);padding:11px 18px;font-family:var(--ff-body);font-size:0.85rem;color:var(--text-secondary);outline:none"
+    >
+      <option value="">Newest First</option>
+      <option value="price_asc">Price: Low → High</option>
+      <option value="price_desc">Price: High → Low</option>
+      <option value="rating">Top Rated</option>
+      <option value="popular">Most Popular</option>
+    </select>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <span style="font-size:0.8rem;color:var(--text-muted)">Max ₹</span>
+      <input
+        type="number"
+        id="maxPrice"
+        placeholder="Any"
+        step="5000"
+        style="width:100px;background:var(--dark-2);border:1px solid var(--glass-border);border-radius:var(--radius-pill);padding:11px 14px;font-family:var(--ff-body);font-size:0.85rem;color:var(--text-primary);outline:none"
+        onchange="loadPackages()"
+      />
+    </div>
   </div>
 
-  <div id="packagesList" class="card-grid">
-    <div class="loading">Loading packages...</div>
+  <!-- Category Filter Pills -->
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-pill active" data-cat="" onclick="setCat(this,'')">All</button>
+    <button class="filter-pill" data-cat="beach" onclick="setCat(this,'beach')">🏖 Beach</button>
+    <button class="filter-pill" data-cat="mountain" onclick="setCat(this,'mountain')">🏔 Mountain</button>
+    <button class="filter-pill" data-cat="city" onclick="setCat(this,'city')">🏙 City</button>
+    <button class="filter-pill" data-cat="adventure" onclick="setCat(this,'adventure')">🧗 Adventure</button>
+    <button class="filter-pill" data-cat="cultural" onclick="setCat(this,'cultural')">🏛 Cultural</button>
+    <button class="filter-pill" data-cat="luxury" onclick="setCat(this,'luxury')">✦ Luxury</button>
+    <button class="filter-pill" data-cat="wildlife" onclick="setCat(this,'wildlife')">🦁 Wildlife</button>
   </div>
-</div>
 
-<!-- BOOKING MODAL -->
+  <!-- Results row — admin button injected by JS, NOT a template literal in HTML -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <span id="resultsCount" style="font-size:0.85rem;color:var(--text-muted)">Loading…</span>
+    <!-- ✅ empty span — JS will inject the Add button here if user is admin -->
+    <span id="adminControls"></span>
+  </div>
+
+  <!-- Package cards render here -->
+  <div id="packagesGrid" class="packages-grid"></div>
+
+  <!-- Pagination renders here -->
+  <div id="pagination" style="display:flex;justify-content:center;gap:0.5rem;margin-top:3rem;flex-wrap:wrap"></div>
+
+</div><!-- end .container -->
+
+<!-- ══════════════════════════════════════════════
+     BOOKING MODAL
+════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="bookingModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('bookingModal')">×</button>
-    <h2>Book This Package</h2>
-    
-    <div id="modalPackageInfo" style="background:#f8f9fa;padding:1rem;border-radius:8px;margin-bottom:1.5rem">
-    </div>
+    <button class="modal-close" onclick="closeModal('bookingModal')">✕</button>
+    <h2 class="modal-title" id="bookModalTitle">Book Package</h2>
 
-    <div class="alert alert-error" id="bookingError"></div>
-    <div class="alert alert-success" id="bookingSuccess"></div>
+    <div
+      id="bookPkgInfo"
+      style="background:var(--dark-3);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1.25rem;font-size:0.85rem;color:var(--text-muted)"
+    ></div>
+
+    <div class="alert alert-error"   id="bookError"></div>
+    <div class="alert alert-success" id="bookSuccess"></div>
 
     <div class="form-group">
-      <label>Number of Seats</label>
-      <input type="number" id="numSeats" min="1" value="1" />
+      <label>Number of seats</label>
+      <input type="number" id="numSeats" min="1" value="1" oninput="calcTotal()"/>
     </div>
     <div class="form-group">
-      <label>Travel Date</label>
-      <input type="date" id="travelDate" />
+      <label>Travel date</label>
+      <input type="date" id="travelDate"/>
     </div>
-    <div style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;color:#1a1a2e">
-      Total: ₹<span id="totalAmount">0</span>
+    <div class="form-group">
+      <label>Coupon code (optional)</label>
+      <div class="coupon-row">
+        <input type="text" id="couponCode" placeholder="e.g. TRAVEL20" style="text-transform:uppercase"/>
+        <button class="btn btn-ghost btn-sm" onclick="applyCoupon()">Apply</button>
+      </div>
+      <div id="couponTag" style="display:none"></div>
     </div>
-    <button class="btn btn-primary" style="width:100%" onclick="confirmBooking()">
+
+    <!-- Price breakdown -->
+    <div style="padding:1rem;background:var(--dark-3);border-radius:var(--radius-sm);margin-bottom:1.25rem">
+      <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.3rem">
+        <span>Subtotal</span><span id="subtotal">₹0</span>
+      </div>
+      <div
+        id="discountRow"
+        style="display:none;justify-content:space-between;font-size:0.85rem;color:var(--green);margin-bottom:0.3rem"
+      >
+        <span id="discountLabel">Discount</span>
+        <span id="discountAmt">-₹0</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--ff-display);font-size:1.4rem;color:var(--text-primary);border-top:1px solid var(--glass-border);padding-top:0.5rem;margin-top:0.5rem">
+        <span>Total</span><span id="totalAmt">₹0</span>
+      </div>
+    </div>
+
+    <button class="btn btn-gold" style="width:100%" onclick="confirmBooking()">
       Confirm Booking
     </button>
   </div>
 </div>
 
-<!-- ADD PACKAGE MODAL (Admin Only) -->
-<div class="modal-overlay" id="addPackageModal">
+<!-- ══════════════════════════════════════════════
+     ADD PACKAGE MODAL  (admin only — shown via JS)
+════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="addPkgModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('addPackageModal')">×</button>
-    <h2>Add New Package</h2>
-    
-    <div class="alert alert-error" id="addPackageError"></div>
+    <button class="modal-close" onclick="closeModal('addPkgModal')">✕</button>
+    <h2 class="modal-title">Add New Package</h2>
+    <div class="alert alert-error" id="addPkgError"></div>
 
     <div class="form-group">
-      <label>Package Title</label>
-      <input type="text" id="pkgTitle" placeholder="e.g., Golden Triangle Tour" />
+      <label>Title</label>
+      <input type="text" id="pkgTitle" placeholder="Santorini Escape"/>
     </div>
     <div class="form-group">
       <label>Destination</label>
-      <input type="text" id="pkgDestination" placeholder="e.g., Delhi, Agra, Jaipur" />
+      <input type="text" id="pkgDest" placeholder="Santorini, Greece"/>
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="pkgCat">
+        <option value="beach">Beach</option>
+        <option value="mountain">Mountain</option>
+        <option value="city">City</option>
+        <option value="adventure">Adventure</option>
+        <option value="cultural">Cultural</option>
+        <option value="luxury">Luxury</option>
+        <option value="wildlife">Wildlife</option>
+      </select>
     </div>
     <div class="form-group">
       <label>Description</label>
-      <textarea id="pkgDescription" placeholder="Describe the package..."></textarea>
+      <textarea id="pkgDesc" placeholder="Describe the experience…"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">
+      <div class="form-group">
+        <label>Duration (days)</label>
+        <input type="number" id="pkgDuration" min="1" placeholder="7"/>
+      </div>
+      <div class="form-group">
+        <label>Price (₹)</label>
+        <input type="number" id="pkgPrice" min="0" placeholder="85000"/>
+      </div>
+      <div class="form-group">
+        <label>Seats</label>
+        <input type="number" id="pkgSeats" min="1" placeholder="20"/>
+      </div>
     </div>
     <div class="form-group">
-      <label>Duration (days)</label>
-      <input type="number" id="pkgDuration" min="1" placeholder="7" />
+      <label>Image URL</label>
+      <input type="url" id="pkgImg" placeholder="https://images.unsplash.com/…"/>
     </div>
     <div class="form-group">
-      <label>Price per person (₹)</label>
-      <input type="number" id="pkgPrice" min="0" placeholder="25000" />
+      <label>Highlights (comma-separated)</label>
+      <input type="text" id="pkgHighlights" placeholder="Sunset cruise, Cave hotel, Wine tasting"/>
     </div>
-    <div class="form-group">
-      <label>Available Seats</label>
-      <input type="number" id="pkgSeats" min="1" placeholder="20" />
+    <div class="form-group" style="display:flex;align-items:center;gap:0.75rem">
+      <input type="checkbox" id="pkgFeatured" style="width:auto;accent-color:var(--gold)"/>
+      <label for="pkgFeatured" style="text-transform:none;letter-spacing:0;margin:0">
+        Mark as featured
+      </label>
     </div>
-    <div class="form-group">
-      <label>Image URL (optional)</label>
-      <input type="url" id="pkgImage" placeholder="https://..." />
-    </div>
-    <button class="btn btn-primary" style="width:100%" onclick="addPackage()">Add Package</button>
+    <button class="btn btn-gold" style="width:100%;margin-top:0.5rem" onclick="submitAddPackage()">
+      Add Package
+    </button>
   </div>
 </div>
 
-<footer><p>© 2025 TravelEase</p></footer>
+<!-- FOOTER -->
+<footer style="margin-top:4rem">
+  <div class="container">
+    <div class="footer-bottom" style="border-top:1px solid var(--glass-border);padding-top:1.5rem">
+      <span>© 2025 TravelEase</span>
+      <a href="index.html" style="color:var(--gold);text-decoration:none">← Back to Home</a>
+    </div>
+  </div>
+</footer>
 
+<!-- ══════════════════════════════════════════════
+     SCRIPTS  — app.js MUST come first
+════════════════════════════════════════════════ -->
+<script src="js/app.js"></script>
 <script>
-  const token = localStorage.getItem('token')
-  const user = JSON.parse(localStorage.getItem('user') || 'null')
-  let selectedPackage = null
+// ─────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────
+let currentPage     = 1
+let currentCat      = ''
+let selectedPkg     = null
+let appliedDiscount = 0
+let searchTimer     = null
 
-  // ── NAVBAR AUTH ────────────────────────────────────────────────────
-  if (token && user) {
-    document.getElementById('authSection').innerHTML = `
-      <span style="color:#ccc;font-size:0.9rem">Hi, ${user.name}</span>
-      <button onclick="logout()" class="btn btn-outline btn-sm" style="margin-left:10px">Logout</button>
-    `
-    // Show Add Package button to admins
-    if (user.role === 'admin') {
-      document.getElementById('addPackageBtn').style.display = 'inline-block'
-    }
+// ─────────────────────────────────────────────────────────────
+// ON LOAD — read URL params then fetch packages
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  readURLParams()
+  injectAdminButton()   // ✅ admin button added by JS, never a raw template literal in HTML
+  loadPackages()
+})
+
+// ─────────────────────────────────────────────────────────────
+// INJECT ADMIN BUTTON (safe — done in JS, not raw HTML)
+// ─────────────────────────────────────────────────────────────
+function injectAdminButton() {
+  var user = getUser()
+  if (user && user.role === 'admin') {
+    document.getElementById('adminControls').innerHTML =
+      '<button class="btn btn-gold btn-sm" onclick="openAddModal()">+ Add Package</button>'
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// READ URL PARAMS  (e.g. ?category=beach&q=goa)
+// ─────────────────────────────────────────────────────────────
+function readURLParams() {
+  var p = new URLSearchParams(location.search)
+
+  if (p.get('q')) {
+    document.getElementById('searchInput').value = p.get('q')
   }
 
-  function logout() {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    window.location.href = 'index.html'
+  if (p.get('category')) {
+    currentCat = p.get('category')
+    document.querySelectorAll('.filter-pill').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.cat === currentCat)
+    })
   }
+}
 
-  // ── LOAD PACKAGES ─────────────────────────────────────────────────
-  async function loadPackages() {
-    try {
-      const response = await fetch('/api/packages')
-      const data = await response.json()
-      const container = document.getElementById('packagesList')
+// ─────────────────────────────────────────────────────────────
+// CATEGORY FILTER
+// ─────────────────────────────────────────────────────────────
+function setCat(btn, cat) {
+  currentCat  = cat
+  currentPage = 1
+  document.querySelectorAll('.filter-pill').forEach(function (b) {
+    b.classList.remove('active')
+  })
+  btn.classList.add('active')
+  loadPackages()
+}
 
-      if (!data.success || data.packages.length === 0) {
-        container.innerHTML = '<div class="empty-state"><h3>No packages available</h3><p>Check back soon!</p></div>'
-        return
-      }
+// ─────────────────────────────────────────────────────────────
+// DEBOUNCED SEARCH
+// ─────────────────────────────────────────────────────────────
+function debounceSearch() {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(function () {
+    currentPage = 1
+    loadPackages()
+  }, 400)
+}
 
-      container.innerHTML = data.packages.map(pkg => `
-        <div class="package-card">
-          <img src="${pkg.image}" alt="${pkg.title}" 
-            onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=600'" />
-          <div class="card-body">
-            <h3>${pkg.title}</h3>
-            <div class="destination">📍 ${pkg.destination}</div>
-            <p style="font-size:0.85rem;color:#666;margin-bottom:0.75rem">
-              ${pkg.description.substring(0, 120)}${pkg.description.length > 120 ? '...' : ''}
-            </p>
-            <div class="card-meta">
-              <span>⏱ ${pkg.duration} days</span>
-              <span class="seats">✓ ${pkg.availableSeats} seats left</span>
-            </div>
-            <div class="price" style="margin:0.5rem 0">₹${pkg.price.toLocaleString()}</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-primary btn-sm" 
-                onclick="openBookingModal('${pkg._id}', '${pkg.title}', ${pkg.price}, ${pkg.availableSeats})"
-                ${pkg.availableSeats === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>
-                ${pkg.availableSeats === 0 ? 'Sold Out' : 'Book Now'}
-              </button>
-              ${user && user.role === 'admin' ? `
-                <button class="btn btn-danger btn-sm" onclick="deletePackage('${pkg._id}')">Delete</button>
-              ` : ''}
-            </div>
-          </div>
-        </div>
-      `).join('')
-    } catch (error) {
-      document.getElementById('packagesList').innerHTML = 
-        '<div class="empty-state"><h3>Error loading packages</h3></div>'
-    }
-  }
+// ─────────────────────────────────────────────────────────────
+// LOAD PACKAGES  — main function
+// ─────────────────────────────────────────────────────────────
+async function loadPackages() {
+  var q        = document.getElementById('searchInput').value.trim()
+  var sort     = document.getElementById('sortSel').value
+  var maxPrice = document.getElementById('maxPrice').value
+  var params   = new URLSearchParams()
 
-  // ── BOOKING MODAL ─────────────────────────────────────────────────
-  function openBookingModal(id, title, price, availableSeats) {
-    if (!token) {
-      alert('Please login first to book a package!')
-      window.location.href = 'login.html'
+  if (q)          params.set('q', q)
+  if (currentCat) params.set('category', currentCat)
+  if (sort)       params.set('sort', sort)
+  if (maxPrice)   params.set('maxPrice', maxPrice)
+  params.set('page',  currentPage)
+  params.set('limit', 9)
+
+  // Use search endpoint if there's a text query, otherwise normal endpoint
+  var endpoint = q
+    ? '/api/packages/search?' + params.toString()
+    : '/api/packages?' + params.toString()
+
+  var grid = document.getElementById('packagesGrid')
+
+  // Show loading skeleton
+  grid.innerHTML =
+    '<div style="grid-column:1/-1;text-align:center;padding:4rem 2rem;color:var(--text-muted)">' +
+    'Loading destinations…</div>'
+
+  try {
+    var result = await apiFetch(endpoint)
+    var data   = result.data
+
+    // ── EMPTY STATE ──────────────────────────────────────────
+    if (!data.success || !data.packages || data.packages.length === 0) {
+      grid.innerHTML =
+        '<div class="empty-state" style="grid-column:1/-1">' +
+        '<h3>No packages found</h3>' +
+        '<p>Try a different search term or category</p>' +
+        '</div>'
+      document.getElementById('resultsCount').textContent = '0 packages found'
+      document.getElementById('pagination').innerHTML = ''
       return
     }
 
-    selectedPackage = { id, title, price, availableSeats }
-    
-    document.getElementById('modalPackageInfo').innerHTML = `
-      <strong>${title}</strong><br>
-      <span style="color:#666;font-size:0.9rem">₹${price.toLocaleString()} per person • ${availableSeats} seats available</span>
-    `
-    
-    // Set minimum date to tomorrow
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    document.getElementById('travelDate').min = tomorrow.toISOString().split('T')[0]
-    
-    document.getElementById('numSeats').value = 1
-    document.getElementById('totalAmount').textContent = price.toLocaleString()
-    
-    document.getElementById('bookingModal').classList.add('active')
-  }
+    // ── RESULTS COUNT ────────────────────────────────────────
+    var total = data.total || data.count || data.packages.length
+    document.getElementById('resultsCount').textContent =
+      total + ' package' + (total !== 1 ? 's' : '') + ' found'
 
-  // Update total when seats change
-  document.getElementById('numSeats')?.addEventListener('input', function () {
-    if (selectedPackage) {
-      const total = this.value * selectedPackage.price
-      document.getElementById('totalAmount').textContent = total.toLocaleString()
+    // ── RENDER CARDS ─────────────────────────────────────────
+    // Load wishlist IDs first so hearts render correctly
+    await loadWishlistIds()
+
+    grid.innerHTML = data.packages.map(function (p) {
+      return renderCard(p)
+    }).join('')
+
+    // Trigger reveal animations
+    if (typeof initReveal === 'function') initReveal()
+
+    // ── PAGINATION ────────────────────────────────────────────
+    var pages = data.pages || 1
+    var pgHtml = ''
+    for (var i = 1; i <= pages; i++) {
+      pgHtml +=
+        '<button class="filter-pill ' + (i === currentPage ? 'active' : '') + '" ' +
+        'onclick="goPage(' + i + ')">' + i + '</button>'
     }
-  })
+    document.getElementById('pagination').innerHTML = pgHtml
 
-  async function confirmBooking() {
-    const seats = parseInt(document.getElementById('numSeats').value)
-    const travelDate = document.getElementById('travelDate').value
-
-    if (!travelDate) {
-      return showModalAlert('bookingError', 'Please select a travel date')
-    }
-    if (seats < 1 || seats > selectedPackage.availableSeats) {
-      return showModalAlert('bookingError', `Please enter between 1 and ${selectedPackage.availableSeats} seats`)
+    // ── AUTO-OPEN BOOKING if ?book=packageId in URL ───────────
+    var bookId = new URLSearchParams(location.search).get('book')
+    if (bookId) {
+      var pkg = data.packages.find(function (p) { return p._id === bookId })
+      if (pkg) openBookingModal(pkg)
     }
 
-    try {
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`   // Send our JWT token
-        },
-        body: JSON.stringify({
-          packageId: selectedPackage.id,
-          numberOfSeats: seats,
-          travelDate
-        })
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        showModalAlert('bookingSuccess', 'Booking confirmed! Redirecting...', 'success')
-        setTimeout(() => {
-          closeModal('bookingModal')
-          window.location.href = 'bookings.html'
-        }, 1500)
-      } else {
-        showModalAlert('bookingError', data.message)
-      }
-    } catch (error) {
-      showModalAlert('bookingError', 'Connection error')
-    }
+  } catch (err) {
+    console.error('loadPackages error:', err)
+    grid.innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1">' +
+      '<h3>Could not load packages</h3>' +
+      '<p>Make sure the server is running on port 5000</p>' +
+      '</div>'
   }
+}
 
-  // ── ADD PACKAGE (Admin) ───────────────────────────────────────────
-  function openAddModal() {
-    document.getElementById('addPackageModal').classList.add('active')
-  }
-
-  async function addPackage() {
-    const title = document.getElementById('pkgTitle').value.trim()
-    const destination = document.getElementById('pkgDestination').value.trim()
-    const description = document.getElementById('pkgDescription').value.trim()
-    const duration = document.getElementById('pkgDuration').value
-    const price = document.getElementById('pkgPrice').value
-    const availableSeats = document.getElementById('pkgSeats').value
-    const image = document.getElementById('pkgImage').value.trim()
-
-    if (!title || !destination || !description || !duration || !price || !availableSeats) {
-      return showModalAlert('addPackageError', 'Please fill all required fields')
-    }
-
-    try {
-      const response = await fetch('/api/packages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ title, destination, description, duration: +duration, price: +price, availableSeats: +availableSeats, image })
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        closeModal('addPackageModal')
-        loadPackages()  // Reload the list
-      } else {
-        showModalAlert('addPackageError', data.message)
-      }
-    } catch (error) {
-      showModalAlert('addPackageError', 'Error adding package')
-    }
-  }
-
-  // ── DELETE PACKAGE ────────────────────────────────────────────────
-  async function deletePackage(id) {
-    if (!confirm('Are you sure you want to delete this package?')) return
-
-    try {
-      const response = await fetch(`/api/packages/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await response.json()
-      if (data.success) loadPackages()
-      else alert(data.message)
-    } catch (error) {
-      alert('Error deleting package')
-    }
-  }
-
-  // ── HELPERS ───────────────────────────────────────────────────────
-  function closeModal(id) {
-    document.getElementById(id).classList.remove('active')
-  }
-
-  function showModalAlert(id, message, type = 'error') {
-    const el = document.getElementById(id)
-    el.textContent = message
-    el.className = `alert alert-${type}`
-    el.style.display = 'block'
-    setTimeout(() => { el.style.display = 'none' }, 4000)
-  }
-
-  // Close modal when clicking outside
-  document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) overlay.classList.remove('active')
-    })
-  })
-
-  // Initialize
+// ─────────────────────────────────────────────────────────────
+// PAGINATION
+// ─────────────────────────────────────────────────────────────
+function goPage(n) {
+  currentPage = n
   loadPackages()
+  window.scrollTo({ top: 200, behavior: 'smooth' })
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER ONE PACKAGE CARD
+// ─────────────────────────────────────────────────────────────
+function renderCard(p) {
+  var user     = getUser()
+  var isAdmin  = user && user.role === 'admin'
+  var wished   = wishlistIds.has(p._id)
+  var soldOut  = p.availableSeats === 0
+
+  // Rating HTML
+  var ratingHtml = ''
+  if (p.numReviews && p.numReviews > 0) {
+    ratingHtml =
+      '<div class="pkg-rating">' +
+      '<span class="stars">' + renderStars(p.averageRating) + '</span>' +
+      '<span class="rating-num">' + p.averageRating + ' (' + p.numReviews + ' reviews)</span>' +
+      '</div>'
+  } else {
+    ratingHtml = '<div style="height:0.5rem"></div>'
+  }
+
+  // Highlights HTML
+  var hlHtml = ''
+  if (p.highlights && p.highlights.length > 0) {
+    hlHtml = '<div class="pkg-highlights">' +
+      p.highlights.slice(0, 2).map(function (h) {
+        return '<div class="pkg-hl">' + h + '</div>'
+      }).join('') +
+      '</div>'
+  }
+
+  // Admin delete button
+  var adminBtn = isAdmin
+    ? '<button class="btn btn-danger btn-sm" onclick="deletePkg(\'' + p._id + '\')">Delete</button>'
+    : ''
+
+  // Seats label
+  var seatsLabel = soldOut
+    ? ''
+    : '<span style="font-size:0.72rem;color:var(--green)">✓ ' + p.availableSeats + ' seats left</span>'
+
+  return (
+    '<div class="pkg-card reveal">' +
+      '<div class="pkg-img-wrap">' +
+        '<img src="' + p.image + '" alt="' + p.title + '" loading="lazy" ' +
+          'onerror="this.src=\'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800\'"/>' +
+        (p.isFeatured ? '<span class="pkg-badge badge-featured">Featured</span>' : '') +
+        '<span class="pkg-badge badge-cat">' + p.category + '</span>' +
+        (soldOut ? '<span class="pkg-badge badge-soldout">Sold Out</span>' : '') +
+        '<div class="wish-btn ' + (wished ? 'active' : '') + '" ' +
+          'data-pkgid="' + p._id + '" ' +
+          'onclick="toggleWishlist(\'' + p._id + '\', this)">' +
+        '</div>' +
+      '</div>' +
+      '<div class="pkg-body">' +
+        '<div class="pkg-dest">📍 ' + p.destination + '</div>' +
+        '<div class="pkg-title">' + p.title + '</div>' +
+        '<div class="pkg-desc">' + p.description + '</div>' +
+        hlHtml +
+        ratingHtml +
+        '<div class="pkg-meta">' +
+          '<div class="pkg-price-wrap">' +
+            '<div class="pkg-price-label">Per person</div>' +
+            '<div class="pkg-price"><sup>₹</sup>' + p.price.toLocaleString('en-IN') + '</div>' +
+            '<div class="pkg-duration">⏱ ' + p.duration + ' days</div>' +
+          '</div>' +
+          '<div style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end">' +
+            '<button class="btn btn-gold btn-sm" ' +
+              (soldOut ? 'disabled ' : '') +
+              'onclick=\'openBookingModal(' + JSON.stringify(p) + ')\'>' +
+              (soldOut ? 'Sold Out' : 'Book Now') +
+            '</button>' +
+            '<a href="reviews.html?pkg=' + p._id + '&title=' + encodeURIComponent(p.title) + '" ' +
+              'class="btn btn-ghost btn-sm">Reviews</a>' +
+            seatsLabel +
+            adminBtn +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// BOOKING MODAL
+// ─────────────────────────────────────────────────────────────
+function openBookingModal(pkg) {
+  if (!getToken()) {
+    window.location.href = 'login.html'
+    return
+  }
+
+  selectedPkg     = pkg
+  appliedDiscount = 0
+
+  document.getElementById('bookModalTitle').textContent = pkg.title
+  document.getElementById('bookPkgInfo').innerHTML =
+    '<strong style="color:var(--text-primary)">' + pkg.destination + '</strong>' +
+    ' · ' + pkg.duration + ' days' +
+    ' · ' + pkg.availableSeats + ' seats available<br/>' +
+    '<span style="color:var(--gold);font-size:1rem">₹' +
+    pkg.price.toLocaleString('en-IN') + '</span> per person'
+
+  // Set minimum date to tomorrow
+  var tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  document.getElementById('travelDate').min = tomorrow.toISOString().split('T')[0]
+  document.getElementById('numSeats').max   = pkg.availableSeats
+  document.getElementById('numSeats').value = 1
+
+  // Reset coupon state
+  document.getElementById('couponCode').value       = ''
+  document.getElementById('couponTag').style.display = 'none'
+  document.getElementById('discountRow').style.display = 'none'
+  document.getElementById('bookError').style.display   = 'none'
+  document.getElementById('bookSuccess').style.display = 'none'
+
+  calcTotal()
+  document.getElementById('bookingModal').classList.add('open')
+}
+
+// ─────────────────────────────────────────────────────────────
+// PRICE CALCULATOR
+// ─────────────────────────────────────────────────────────────
+function calcTotal() {
+  if (!selectedPkg) return
+  var seats = parseInt(document.getElementById('numSeats').value) || 1
+  var sub   = seats * selectedPkg.price
+  var disc  = Math.round(sub * appliedDiscount / 100)
+  var total = sub - disc
+
+  document.getElementById('subtotal').textContent = '₹' + sub.toLocaleString('en-IN')
+  document.getElementById('totalAmt').textContent = '₹' + total.toLocaleString('en-IN')
+
+  if (appliedDiscount > 0) {
+    document.getElementById('discountRow').style.display  = 'flex'
+    document.getElementById('discountAmt').textContent    = '-₹' + disc.toLocaleString('en-IN')
+    document.getElementById('discountLabel').textContent  = 'Discount (' + appliedDiscount + '%)'
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// APPLY COUPON
+// ─────────────────────────────────────────────────────────────
+async function applyCoupon() {
+  var code = document.getElementById('couponCode').value.trim().toUpperCase()
+  if (!code) return
+
+  var result = await apiFetch('/api/coupons/validate', {
+    method: 'POST',
+    body: JSON.stringify({ code: code })
+  })
+  var data = result.data
+
+  if (data.success) {
+    appliedDiscount = data.discountPercent
+    var tag = document.getElementById('couponTag')
+    tag.innerHTML = '<span class="coupon-tag">✓ ' + data.message + '</span>'
+    tag.style.display = 'block'
+    calcTotal()
+  } else {
+    showAlert('bookError', data.message)
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// CONFIRM BOOKING
+// ─────────────────────────────────────────────────────────────
+async function confirmBooking() {
+  var seats      = parseInt(document.getElementById('numSeats').value)
+  var travelDate = document.getElementById('travelDate').value
+
+  if (!travelDate) {
+    return showAlert('bookError', 'Please select a travel date')
+  }
+  if (!seats || seats < 1 || seats > selectedPkg.availableSeats) {
+    return showAlert('bookError', 'Please enter between 1 and ' + selectedPkg.availableSeats + ' seats')
+  }
+
+  var body = {
+    packageId:     selectedPkg._id,
+    numberOfSeats: seats,
+    travelDate:    travelDate
+  }
+  if (appliedDiscount > 0) {
+    body.discountPercent = appliedDiscount
+  }
+
+  var result = await apiFetch('/api/bookings', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  })
+  var data = result.data
+
+  if (data.success) {
+    showAlert('bookSuccess',
+      '🎉 Booking confirmed! Total: ₹' + data.booking.totalAmount.toLocaleString('en-IN'),
+      'success'
+    )
+    setTimeout(function () {
+      closeModal('bookingModal')
+      window.location.href = 'bookings.html'
+    }, 1800)
+  } else {
+    showAlert('bookError', data.message)
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// ADD PACKAGE  (admin)
+// ─────────────────────────────────────────────────────────────
+function openAddModal() {
+  document.getElementById('addPkgModal').classList.add('open')
+}
+
+async function submitAddPackage() {
+  var highlights = document.getElementById('pkgHighlights').value
+    .split(',')
+    .map(function (s) { return s.trim() })
+    .filter(Boolean)
+
+  var body = {
+    title:          document.getElementById('pkgTitle').value.trim(),
+    destination:    document.getElementById('pkgDest').value.trim(),
+    category:       document.getElementById('pkgCat').value,
+    description:    document.getElementById('pkgDesc').value.trim(),
+    duration:       parseInt(document.getElementById('pkgDuration').value),
+    price:          parseInt(document.getElementById('pkgPrice').value),
+    availableSeats: parseInt(document.getElementById('pkgSeats').value),
+    totalSeats:     parseInt(document.getElementById('pkgSeats').value),
+    image:          document.getElementById('pkgImg').value.trim(),
+    isFeatured:     document.getElementById('pkgFeatured').checked,
+    highlights:     highlights
+  }
+
+  if (!body.title || !body.destination || !body.description || !body.duration || !body.price || !body.availableSeats) {
+    return showAlert('addPkgError', 'Please fill in all required fields')
+  }
+
+  var result = await apiFetch('/api/packages', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  })
+  var data = result.data
+
+  if (data.success) {
+    closeModal('addPkgModal')
+    loadPackages()
+  } else {
+    showAlert('addPkgError', data.message)
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// DELETE PACKAGE  (admin)
+// ─────────────────────────────────────────────────────────────
+async function deletePkg(id) {
+  if (!confirm('Delete this package? This cannot be undone.')) return
+
+  var result = await apiFetch('/api/packages/' + id, { method: 'DELETE' })
+  var data   = result.data
+
+  if (data.success) {
+    loadPackages()
+  } else {
+    alert(data.message)
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// MODAL HELPERS
+// ─────────────────────────────────────────────────────────────
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open')
+}
+
+// Close modal when clicking the dark overlay behind it
+document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) overlay.classList.remove('open')
+  })
+})
 </script>
+
 </body>
 </html>

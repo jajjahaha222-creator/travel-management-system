@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Profile — TravelEase</title><link rel="stylesheet" href="css/style.css"/></head>
+<body>
+<nav class="navbar scrolled"><a href="index.html" class="logo">Travel<span>Ease</span></a><ul class="nav-links"><li><a href="packages.html">Destinations</a></li><ul id="navAuth" style="display:contents"></ul></ul></nav>
+<div style="height:72px"></div>
+<div class="container" style="padding-top:2.5rem;max-width:760px">
+  <div class="section-label">✦ Your Account</div>
+  <div id="profileHeader" class="profile-header"></div>
+  
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+    <div style="background:var(--dark-2);border:1px solid var(--glass-border);border-radius:var(--radius);padding:1.5rem;grid-column:1/-1">
+      <h3 style="font-family:var(--ff-display);font-size:1.3rem;margin-bottom:1.25rem">Edit Profile</h3>
+      <div class="alert alert-error" id="profileError"></div>
+      <div class="alert alert-success" id="profileSuccess"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+        <div class="form-group"><label>Full Name</label><input type="text" id="pName"/></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="pPhone" placeholder="+91 9876543210"/></div>
+        <div class="form-group"><label>Country</label><input type="text" id="pCountry" placeholder="India"/></div>
+        <div class="form-group"><label>Avatar URL</label><input type="url" id="pAvatar" placeholder="https://…"/></div>
+      </div>
+      <div class="form-group"><label>Bio</label><textarea id="pBio" placeholder="Tell us about yourself…"></textarea></div>
+      <button class="btn btn-gold" onclick="saveProfile()">Save Changes</button>
+    </div>
+
+    <div style="background:var(--dark-2);border:1px solid var(--glass-border);border-radius:var(--radius);padding:1.5rem;grid-column:1/-1">
+      <h3 style="font-family:var(--ff-display);font-size:1.3rem;margin-bottom:1.25rem">Change Password</h3>
+      <div class="alert alert-error" id="pwError"></div>
+      <div class="alert alert-success" id="pwSuccess"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">
+        <div class="form-group"><label>Current Password</label><input type="password" id="pwCur"/></div>
+        <div class="form-group"><label>New Password</label><input type="password" id="pwNew"/></div>
+        <div class="form-group"><label>Confirm</label><input type="password" id="pwConf"/></div>
+      </div>
+      <button class="btn btn-ghost" onclick="changePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+<script>
+if(!getToken()){window.location.href='login.html'}
+async function loadProfile(){
+  const{data}=await apiFetch('/api/auth/me')
+  if(!data.success)return
+  const u=data.user
+  const init=u.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)
+  document.getElementById('profileHeader').innerHTML=`
+    <div class="profile-avatar-large">${init}</div>
+    <div><div class="profile-name">${u.name}</div><div class="profile-email">${u.email}</div>
+    <div style="margin-top:0.5rem;font-size:0.82rem;color:var(--text-muted)">${u.role==='admin'?'⚙ Administrator':'🌍 Traveller'}</div></div>
+  `
+  document.getElementById('pName').value=u.name||''
+  document.getElementById('pPhone').value=u.phone||''
+  document.getElementById('pCountry').value=u.country||''
+  document.getElementById('pBio').value=u.bio||''
+  document.getElementById('pAvatar').value=u.avatar||''
+}
+async function saveProfile(){
+  const{data}=await apiFetch('/api/auth/profile',{method:'PUT',body:JSON.stringify({
+    name:document.getElementById('pName').value.trim(),
+    phone:document.getElementById('pPhone').value.trim(),
+    country:document.getElementById('pCountry').value.trim(),
+    bio:document.getElementById('pBio').value.trim(),
+    avatar:document.getElementById('pAvatar').value.trim()
+  })})
+  if(data.success){setAuth(getToken(),data.user);showAlert('profileSuccess','Profile updated!','success')}
+  else showAlert('profileError',data.message)
+}
+async function changePassword(){
+  const cur=document.getElementById('pwCur').value
+  const nw=document.getElementById('pwNew').value
+  const conf=document.getElementById('pwConf').value
+  if(nw!==conf)return showAlert('pwError','Passwords do not match')
+  if(nw.length<6)return showAlert('pwError','New password must be at least 6 characters')
+  const{data}=await apiFetch('/api/auth/change-password',{method:'PUT',body:JSON.stringify({currentPassword:cur,newPassword:nw})})
+  if(data.success)showAlert('pwSuccess',data.message,'success')
+  else showAlert('pwError',data.message)
+}
+document.addEventListener('DOMContentLoaded',loadProfile)
+</script>
+</body></html>

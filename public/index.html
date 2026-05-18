@@ -1,115 +1,280 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TravelEase — Find Your Perfect Trip</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>TravelEase — Extraordinary Journeys</title>
+  <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
 
+<!-- Custom Cursor -->
+<div class="cursor"><div class="cursor-dot" style="position:fixed"></div></div>
+<div class="cursor"><div class="cursor-ring" style="position:fixed"></div></div>
+
 <!-- NAVBAR -->
 <nav class="navbar">
-  <a href="index.html" class="logo">✈ TravelEase</a>
-  <ul class="nav-links" id="navLinks">
-    <li><a href="packages.html">Packages</a></li>
-    <li><a href="bookings.html">My Bookings</a></li>
-    <li id="authSection">
-      <a href="login.html" class="btn btn-outline btn-sm">Login</a>
-    </li>
+  <a href="index.html" class="logo">Travel<span>Ease</span></a>
+  <ul class="nav-links">
+    <li><a href="packages.html">Destinations</a></li>
+    <li><a href="#why-us">Why Us</a></li>
+    <ul id="navAuth" style="display:contents"></ul>
   </ul>
 </nav>
 
-<!-- HERO SECTION -->
+<!-- HERO -->
 <section class="hero">
-  <h1>Find Your Perfect Journey</h1>
-  <p>Explore amazing travel packages — book in seconds</p>
-  <a href="packages.html" class="btn btn-primary" style="font-size:1rem;padding:12px 28px;">
-    Browse Packages
-  </a>
+  <div class="hero-bg-img"></div>
+  <div class="hero-bg"></div>
+
+  <div class="hero-content">
+    <div class="hero-tag">✦ Curated Luxury Travel Experiences</div>
+    <h1>The World Is<br/><em>Waiting For You</em></h1>
+    <p class="hero-sub">Hand-picked destinations, flawless itineraries, memories that last forever.</p>
+    <div class="hero-actions">
+      <a href="packages.html" class="btn btn-gold">Explore Destinations</a>
+      <a href="login.html" class="btn btn-ghost">Start Your Journey →</a>
+    </div>
+  </div>
+
+  <!-- Hero Search Bar -->
+  <div class="hero-search">
+    <div class="search-field">
+      <label>Where to?</label>
+      <input type="text" id="heroSearch" placeholder="Bali, Santorini, Maldives…" autocomplete="off"/>
+    </div>
+    <div class="search-divider"></div>
+    <div class="search-field" style="min-width:140px">
+      <label>Category</label>
+      <select id="heroCategory">
+        <option value="">All Types</option>
+        <option value="beach">Beach</option>
+        <option value="mountain">Mountain</option>
+        <option value="city">City</option>
+        <option value="adventure">Adventure</option>
+        <option value="cultural">Cultural</option>
+        <option value="luxury">Luxury</option>
+      </select>
+    </div>
+    <div class="search-divider"></div>
+    <div class="search-field" style="min-width:110px">
+      <label>Max days</label>
+      <input type="number" id="heroDuration" placeholder="Any" min="1" max="30"/>
+    </div>
+    <button class="btn btn-gold" onclick="doHeroSearch()">Search</button>
+  </div>
 </section>
 
-<!-- FEATURED PACKAGES SECTION -->
-<div class="container">
-  <div class="section-header">
-    <h2>Featured Packages</h2>
-    <a href="packages.html" class="btn btn-outline btn-sm">View All</a>
-  </div>
-  
-  <div id="featuredPackages" class="card-grid">
-    <div class="loading">Loading packages...</div>
+<!-- STATS -->
+<div class="stats-bar" style="margin-top:80px">
+  <div class="container">
+    <div class="stats-grid">
+      <div><span class="stat-num" data-target="12400">0</span><div class="stat-label">Happy Travellers</div></div>
+      <div><span class="stat-num" data-target="86">0</span><div class="stat-label">Destinations</div></div>
+      <div><span class="stat-num" data-target="340">0</span><div class="stat-label">Packages</div></div>
+      <div><span class="stat-num" data-target="98">0</span><div class="stat-label">% Satisfaction</div></div>
+    </div>
   </div>
 </div>
 
+<!-- FEATURED PACKAGES -->
+<section>
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">✦ Handpicked for You</div>
+      <h2 class="section-title">Featured <em>Escapes</em></h2>
+    </div>
+    <div id="featuredGrid" class="packages-grid" style="margin-top:2.5rem">
+      <!-- Skeleton loaders -->
+      <div class="pkg-card"><div class="skeleton" style="height:230px;border-radius:var(--radius) var(--radius) 0 0"></div><div style="padding:1.25rem"><div class="skeleton" style="height:14px;width:60%;margin-bottom:10px"></div><div class="skeleton" style="height:22px;margin-bottom:8px"></div><div class="skeleton" style="height:14px;width:80%"></div></div></div>
+      <div class="pkg-card"><div class="skeleton" style="height:230px;border-radius:var(--radius) var(--radius) 0 0"></div><div style="padding:1.25rem"><div class="skeleton" style="height:14px;width:60%;margin-bottom:10px"></div><div class="skeleton" style="height:22px;margin-bottom:8px"></div><div class="skeleton" style="height:14px;width:80%"></div></div></div>
+      <div class="pkg-card"><div class="skeleton" style="height:230px;border-radius:var(--radius) var(--radius) 0 0"></div><div style="padding:1.25rem"><div class="skeleton" style="height:14px;width:60%;margin-bottom:10px"></div><div class="skeleton" style="height:22px;margin-bottom:8px"></div><div class="skeleton" style="height:14px;width:80%"></div></div></div>
+    </div>
+    <div style="text-align:center;margin-top:2.5rem">
+      <a href="packages.html" class="btn btn-ghost">View All Destinations →</a>
+    </div>
+  </div>
+</section>
+
+<!-- PARALLAX BANNER -->
+<div class="parallax-banner">
+  <div class="parallax-bg"></div>
+  <div class="parallax-overlay"></div>
+  <div class="parallax-content reveal">
+    <div class="section-label" style="color:var(--gold)">✦ Your Story Awaits</div>
+    <h2>Life Is Short.<br/><em>Travel More.</em></h2>
+    <a href="packages.html" class="btn btn-gold" style="margin-top:1.5rem;font-size:1rem;padding:14px 32px">Plan My Trip</a>
+  </div>
+</div>
+
+<!-- WHY CHOOSE US -->
+<section id="why-us">
+  <div class="container">
+    <div class="reveal" style="text-align:center;margin-bottom:1rem">
+      <div class="section-label">✦ The TravelEase Difference</div>
+      <h2 class="section-title">Why Travellers <em>Choose Us</em></h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal"><div class="feature-icon">✦</div><div class="feature-title">Curated Experiences</div><p class="feature-desc">Every package is hand-vetted by our travel experts. No generic tours — only extraordinary experiences.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon">🛡</div><div class="feature-title">Price Guarantee</div><p class="feature-desc">We match any lower price you find, plus give you 5% back. Transparent pricing, zero hidden fees.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon">♾</div><div class="feature-title">Flexible Booking</div><p class="feature-desc">Cancel up to 48 hours before departure for a full refund. Travel with complete peace of mind.</p></div>
+      <div class="feature-card reveal"><div class="feature-icon">★</div><div class="feature-title">Verified Reviews</div><p class="feature-desc">Every review comes from a real traveller who booked through us. Authentic opinions, always.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="newsletter-section">
+  <div class="container">
+    <div class="newsletter-inner">
+      <div class="reveal">
+        <div class="section-label">✦ Stay Inspired</div>
+        <h2 class="newsletter-title">Exclusive Deals<br/><em>In Your Inbox</em></h2>
+        <p class="newsletter-sub">Join 12,000+ travellers. Get early access to flash sales and new destinations.</p>
+      </div>
+      <div class="reveal">
+        <div class="newsletter-form">
+          <input type="email" id="nlEmail" placeholder="Your email address"/>
+          <button class="btn btn-gold" onclick="subscribeNewsletter()">Subscribe</button>
+        </div>
+        <div class="alert alert-error" id="nlError" style="margin-top:0.5rem"></div>
+        <div class="alert alert-success" id="nlSuccess" style="margin-top:0.5rem"></div>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem">No spam, ever. Unsubscribe with one click.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- FOOTER -->
 <footer>
-  <p>© 2025 TravelEase. Built with Node.js, Express & MongoDB.</p>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="footer-logo">TravelEase</span>
+        <p>Extraordinary journeys for discerning travellers. We believe every trip should be a story worth telling.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Destinations</h4>
+        <a href="packages.html?category=beach">Beach</a>
+        <a href="packages.html?category=mountain">Mountain</a>
+        <a href="packages.html?category=adventure">Adventure</a>
+        <a href="packages.html?category=luxury">Luxury</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="login.html">Sign In</a>
+        <a href="login.html?tab=register">Register</a>
+        <a href="bookings.html">My Bookings</a>
+        <a href="wishlist.html">Wishlist</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#">About Us</a>
+        <a href="#">Blog</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 TravelEase. All rights reserved.</span>
+      <span>Built with Node.js · Express · MongoDB</span>
+    </div>
+  </div>
 </footer>
 
+<script src="js/app.js"></script>
 <script>
-  // ── AUTH STATE ─────────────────────────────────────────────────────
-  // Check if user is logged in (token stored in localStorage)
-  const token = localStorage.getItem('token')
-  const user = JSON.parse(localStorage.getItem('user') || 'null')
+// ── COUNTER ANIMATION ─────────────────────────────────────
+function animateCounters() {
+  document.querySelectorAll('[data-target]').forEach(el => {
+    const target = +el.dataset.target
+    const duration = 2000
+    const step = target / (duration / 16)
+    let current = 0
+    const suffix = target === 98 ? '%' : '+'
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target)
+      el.textContent = Math.floor(current).toLocaleString('en-IN') + suffix
+      if (current >= target) clearInterval(timer)
+    }, 16)
+  })
+}
 
-  // Update navbar based on auth state
-  if (token && user) {
-    document.getElementById('authSection').innerHTML = `
-      <span style="color:#ccc;font-size:0.9rem">Hi, ${user.name}</span>
-      <button onclick="logout()" class="btn btn-outline btn-sm" style="margin-left:10px">Logout</button>
-    `
+// Trigger counters when stats bar is visible
+const statsObs = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) { animateCounters(); statsObs.disconnect() }
+}, { threshold: 0.5 })
+statsObs.observe(document.querySelector('.stats-bar'))
+
+// ── LOAD FEATURED PACKAGES ────────────────────────────────
+async function loadFeatured() {
+  const { data } = await apiFetch('/api/packages?featured=true&limit=3')
+  const grid = document.getElementById('featuredGrid')
+  if (!data.success || !data.packages.length) {
+    grid.innerHTML = '<div class="empty-state"><h3>No packages yet</h3><p>Run <code>node seed.js</code> to add sample data</p></div>'
+    return
   }
+  grid.innerHTML = data.packages.slice(0, 3).map((p, i) => renderPackageCard(p, i === 0)).join('')
+}
 
-  function logout() {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    window.location.reload()
-  }
-
-  // ── FETCH FEATURED PACKAGES ────────────────────────────────────────
-  async function loadFeaturedPackages() {
-    try {
-      // fetch() is the browser's built-in tool to call APIs
-      const response = await fetch('/api/packages')
-      const data = await response.json()
-
-      const container = document.getElementById('featuredPackages')
-
-      if (!data.success || data.packages.length === 0) {
-        container.innerHTML = '<div class="empty-state"><h3>No packages available yet</h3></div>'
-        return
-      }
-
-      // Show only first 3 packages on homepage
-      const featured = data.packages.slice(0, 3)
-
-      container.innerHTML = featured.map(pkg => `
-        <div class="package-card">
-          <img src="${pkg.image}" alt="${pkg.title}" onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=600'" />
-          <div class="card-body">
-            <h3>${pkg.title}</h3>
-            <div class="destination">📍 ${pkg.destination}</div>
-            <p style="font-size:0.85rem;color:#666;margin-bottom:0.75rem">
-              ${pkg.description.substring(0, 100)}...
-            </p>
-            <div class="card-meta">
-              <span>⏱ ${pkg.duration} days</span>
-              <span class="seats">✓ ${pkg.availableSeats} seats left</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.75rem">
-              <div class="price">₹${pkg.price.toLocaleString()}</div>
-              <a href="packages.html" class="btn btn-primary btn-sm">Book Now</a>
-            </div>
+function renderPackageCard(p, featured = false) {
+  const wished = wishlistIds.has(p._id)
+  return `
+    <div class="pkg-card ${featured ? 'pkg-card-featured' : ''}" data-id="${p._id}">
+      <div class="pkg-img-wrap">
+        <img src="${p.image}" alt="${p.title}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=800'"/>
+        ${p.isFeatured ? `<span class="pkg-badge badge-featured">Featured</span>` : ''}
+        <span class="pkg-badge badge-cat" style="top:14px;right:${p.availableSeats===0?'14px':'56px'}">${p.category}</span>
+        ${p.availableSeats === 0 ? `<span class="pkg-badge badge-soldout">Sold Out</span>` : ''}
+        <div class="wish-btn ${wished ? 'active' : ''}" onclick="toggleWishlist('${p._id}', this)"></div>
+      </div>
+      <div class="pkg-body">
+        <div class="pkg-dest">📍 ${p.destination}</div>
+        <div class="pkg-title">${p.title}</div>
+        <div class="pkg-desc">${p.description}</div>
+        ${p.highlights?.length ? `<div class="pkg-highlights">${p.highlights.slice(0,2).map(h=>`<div class="pkg-hl">${h}</div>`).join('')}</div>` : ''}
+        ${p.numReviews > 0 ? `<div class="pkg-rating"><span class="stars">${renderStars(p.averageRating)}</span><span class="rating-num">${p.averageRating} (${p.numReviews})</span></div>` : ''}
+        <div class="pkg-meta">
+          <div class="pkg-price-wrap">
+            <div class="pkg-price-label">From</div>
+            <div class="pkg-price"><sup>₹</sup>${p.price.toLocaleString('en-IN')}</div>
+            <div class="pkg-duration">⏱ ${p.duration} days</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end">
+            <button class="btn btn-gold btn-sm" onclick="window.location='packages.html?book=${p._id}'" ${p.availableSeats===0?'disabled':''}>
+              ${p.availableSeats===0 ? 'Sold Out' : 'Book Now'}
+            </button>
+            <span style="font-size:0.72rem;color:var(--green)">${p.availableSeats > 0 ? `✓ ${p.availableSeats} seats left` : ''}</span>
           </div>
         </div>
-      `).join('')
-    } catch (error) {
-      document.getElementById('featuredPackages').innerHTML = 
-        '<div class="empty-state"><h3>Failed to load packages</h3></div>'
-    }
-  }
+      </div>
+    </div>
+  `
+}
 
-  loadFeaturedPackages()
+// ── NEWSLETTER ────────────────────────────────────────────
+async function subscribeNewsletter() {
+  const email = document.getElementById('nlEmail').value.trim()
+  if (!email) return showAlert('nlError', 'Please enter your email')
+  const { data } = await apiFetch('/api/newsletter/subscribe', { method: 'POST', body: JSON.stringify({ email }) })
+  if (data.success) { showAlert('nlSuccess', data.message, 'success'); document.getElementById('nlEmail').value = '' }
+  else showAlert('nlError', data.message)
+}
+
+// ── HERO SEARCH ───────────────────────────────────────────
+function doHeroSearch() {
+  const q        = document.getElementById('heroSearch').value.trim()
+  const category = document.getElementById('heroCategory').value
+  const duration = document.getElementById('heroDuration').value
+  const params   = new URLSearchParams()
+  if (q) params.set('q', q)
+  if (category) params.set('category', category)
+  if (duration) params.set('duration', duration)
+  window.location.href = `packages.html?${params.toString()}`
+}
+document.getElementById('heroSearch')?.addEventListener('keypress', e => { if (e.key==='Enter') doHeroSearch() })
+
+document.addEventListener('DOMContentLoaded', loadFeatured)
 </script>
 </body>
 </html>

@@ -1,195 +1,96 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login — TravelEase</title>
-  <link rel="stylesheet" href="css/style.css" />
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Sign In — TravelEase</title><link rel="stylesheet" href="css/style.css"/>
+<style>
+.auth-page{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+.auth-visual{background:url('https://images.unsplash.com/photo-1503220317375-aaad61436b1b?w=1200')center/cover;position:relative;display:flex;align-items:flex-end;padding:3rem}
+.auth-visual::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,15,0.85) 0%,rgba(10,10,15,0.2) 100%)}
+.auth-visual-text{position:relative;z-index:2}
+.auth-visual-text h2{font-family:var(--ff-display);font-size:2.5rem;font-weight:300;line-height:1.2;margin-bottom:0.5rem}
+.auth-visual-text h2 em{font-style:italic;color:var(--gold)}
+.auth-panel{display:flex;align-items:center;justify-content:center;padding:3rem 2rem;background:var(--dark)}
+.auth-form-wrap{width:min(440px,100%)}
+@media(max-width:768px){.auth-page{grid-template-columns:1fr}.auth-visual{display:none}}
+</style>
 </head>
 <body>
+<div class="auth-page">
+  <div class="auth-visual">
+    <div class="auth-visual-text">
+      <div class="section-label">✦ Welcome Back</div>
+      <h2>Your Next<br/><em>Adventure</em><br/>Awaits</h2>
+    </div>
+  </div>
+  <div class="auth-panel">
+    <div class="auth-form-wrap">
+      <a href="index.html" class="logo" style="display:block;margin-bottom:2.5rem">Travel<span>Ease</span></a>
 
-<nav class="navbar">
-  <a href="index.html" class="logo">✈ TravelEase</a>
-  <ul class="nav-links">
-    <li><a href="packages.html">Packages</a></li>
-    <li><a href="index.html">Home</a></li>
-  </ul>
-</nav>
+      <div style="display:flex;gap:0.5rem;margin-bottom:2rem">
+        <button class="filter-pill active" id="tabLogin" onclick="showTab('login')">Sign In</button>
+        <button class="filter-pill" id="tabReg" onclick="showTab('register')">Create Account</button>
+      </div>
 
-<!-- TAB SWITCHER -->
-<div style="text-align:center;margin-top:2rem">
-  <button class="btn btn-primary" id="tabLogin" onclick="showTab('login')">Login</button>
-  <button class="btn btn-outline" id="tabRegister" onclick="showTab('register')" style="margin-left:10px">Register</button>
+      <!-- LOGIN -->
+      <div id="loginPanel">
+        <div class="alert alert-error" id="loginErr"></div>
+        <div class="alert alert-success" id="loginOk"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="lEmail" placeholder="you@example.com" onkeypress="if(event.key==='Enter')doLogin()"/></div>
+        <div class="form-group"><label>Password</label><input type="password" id="lPass" placeholder="Your password" onkeypress="if(event.key==='Enter')doLogin()"/></div>
+        <button class="btn btn-gold" style="width:100%;padding:13px" onclick="doLogin()">Sign In</button>
+        <p style="text-align:center;margin-top:1rem;font-size:0.82rem;color:var(--text-muted)">
+          Demo admin: <code style="color:var(--gold)">admin@travelease.com</code> / <code style="color:var(--gold)">admin1234</code>
+        </p>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="regPanel" style="display:none">
+        <div class="alert alert-error" id="regErr"></div>
+        <div class="alert alert-success" id="regOk"></div>
+        <div class="form-group"><label>Full Name</label><input type="text" id="rName" placeholder="Shruti Solanki"/></div>
+        <div class="form-group"><label>Email</label><input type="email" id="rEmail" placeholder="you@example.com"/></div>
+        <div class="form-group"><label>Password</label><input type="password" id="rPass" placeholder="Min 6 characters"/></div>
+        <button class="btn btn-gold" style="width:100%;padding:13px" onclick="doRegister()">Create Account</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- LOGIN FORM -->
-<div class="form-container" id="loginForm">
-  <h2>Welcome Back</h2>
-  
-  <div class="alert alert-error" id="loginError"></div>
-  <div class="alert alert-success" id="loginSuccess"></div>
-
-  <div class="form-group">
-    <label>Email Address</label>
-    <input type="email" id="loginEmail" placeholder="you@example.com" />
-  </div>
-  <div class="form-group">
-    <label>Password</label>
-    <input type="password" id="loginPassword" placeholder="Your password" />
-  </div>
-  <button class="btn btn-primary" style="width:100%" onclick="handleLogin()">Login</button>
-  
-  <p style="text-align:center;margin-top:1rem;font-size:0.9rem;color:#666">
-    Don't have an account? <a href="#" onclick="showTab('register')" style="color:#e94560">Register</a>
-  </p>
-</div>
-
-<!-- REGISTER FORM -->
-<div class="form-container" id="registerForm" style="display:none">
-  <h2>Create Account</h2>
-  
-  <div class="alert alert-error" id="registerError"></div>
-  <div class="alert alert-success" id="registerSuccess"></div>
-
-  <div class="form-group">
-    <label>Full Name</label>
-    <input type="text" id="regName" placeholder="Shruti Solanki" />
-  </div>
-  <div class="form-group">
-    <label>Email Address</label>
-    <input type="email" id="regEmail" placeholder="you@example.com" />
-  </div>
-  <div class="form-group">
-    <label>Password (min 6 characters)</label>
-    <input type="password" id="regPassword" placeholder="Create a password" />
-  </div>
-  <button class="btn btn-primary" style="width:100%" onclick="handleRegister()">Create Account</button>
-
-  <p style="text-align:center;margin-top:1rem;font-size:0.9rem;color:#666">
-    Already have an account? <a href="#" onclick="showTab('login')" style="color:#e94560">Login</a>
-  </p>
-</div>
-
-<footer>
-  <p>© 2025 TravelEase</p>
-</footer>
-
+<script src="js/app.js"></script>
 <script>
-  // If already logged in, redirect to homepage
-  if (localStorage.getItem('token')) {
-    window.location.href = 'index.html'
-  }
+if(getToken()){window.location.href='index.html'}
+// Check tab param
+if(new URLSearchParams(location.search).get('tab')==='register') showTab('register')
 
-  // ── TAB SWITCHER ──────────────────────────────────────────────────
-  function showTab(tab) {
-    const loginForm = document.getElementById('loginForm')
-    const registerForm = document.getElementById('registerForm')
-    const tabLogin = document.getElementById('tabLogin')
-    const tabRegister = document.getElementById('tabRegister')
+function showTab(t){
+  document.getElementById('loginPanel').style.display = t==='login'?'block':'none'
+  document.getElementById('regPanel').style.display   = t==='register'?'block':'none'
+  document.getElementById('tabLogin').classList.toggle('active', t==='login')
+  document.getElementById('tabReg').classList.toggle('active', t==='register')
+}
 
-    if (tab === 'login') {
-      loginForm.style.display = 'block'
-      registerForm.style.display = 'none'
-      tabLogin.className = 'btn btn-primary'
-      tabRegister.className = 'btn btn-outline'
-    } else {
-      loginForm.style.display = 'none'
-      registerForm.style.display = 'block'
-      tabLogin.className = 'btn btn-outline'
-      tabRegister.className = 'btn btn-primary'
-    }
-  }
+async function doLogin(){
+  const email=document.getElementById('lEmail').value.trim()
+  const password=document.getElementById('lPass').value
+  if(!email||!password)return showAlert('loginErr','Please fill all fields')
+  const{data}=await apiFetch('/api/auth/login',{method:'POST',body:JSON.stringify({email,password})})
+  if(data.success){
+    setAuth(data.token,data.user)
+    showAlert('loginOk','Welcome back! Redirecting…','success')
+    setTimeout(()=>window.location.href='packages.html',1000)
+  } else showAlert('loginErr',data.message)
+}
 
-  // ── SHOW ALERT HELPER ─────────────────────────────────────────────
-  function showAlert(elementId, message, type = 'error') {
-    const el = document.getElementById(elementId)
-    el.textContent = message
-    el.className = `alert alert-${type}`
-    el.style.display = 'block'
-    // Auto-hide after 5 seconds
-    setTimeout(() => { el.style.display = 'none' }, 5000)
-  }
-
-  // ── HANDLE LOGIN ──────────────────────────────────────────────────
-  async function handleLogin() {
-    const email = document.getElementById('loginEmail').value.trim()
-    const password = document.getElementById('loginPassword').value
-
-    if (!email || !password) {
-      return showAlert('loginError', 'Please fill in all fields')
-    }
-
-    try {
-      // Call our login API
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })  // Convert JS object to JSON string
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        // Save token and user info to localStorage
-        // localStorage = browser storage that persists across page refreshes
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        
-        showAlert('loginSuccess', 'Login successful! Redirecting...', 'success')
-        setTimeout(() => { window.location.href = 'packages.html' }, 1000)
-      } else {
-        showAlert('loginError', data.message)
-      }
-    } catch (error) {
-      showAlert('loginError', 'Connection error. Is the server running?')
-    }
-  }
-
-  // ── HANDLE REGISTER ───────────────────────────────────────────────
-  async function handleRegister() {
-    const name = document.getElementById('regName').value.trim()
-    const email = document.getElementById('regEmail').value.trim()
-    const password = document.getElementById('regPassword').value
-
-    if (!name || !email || !password) {
-      return showAlert('registerError', 'Please fill in all fields')
-    }
-
-    if (password.length < 6) {
-      return showAlert('registerError', 'Password must be at least 6 characters')
-    }
-
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        showAlert('registerSuccess', 'Account created! Redirecting...', 'success')
-        setTimeout(() => { window.location.href = 'packages.html' }, 1000)
-      } else {
-        showAlert('registerError', data.message)
-      }
-    } catch (error) {
-      showAlert('registerError', 'Connection error. Is the server running?')
-    }
-  }
-
-  // Allow pressing Enter to submit
-  document.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      const activeForm = document.getElementById('loginForm').style.display !== 'none'
-        ? 'login' : 'register'
-      if (activeForm === 'login') handleLogin()
-      else handleRegister()
-    }
-  })
+async function doRegister(){
+  const name=document.getElementById('rName').value.trim()
+  const email=document.getElementById('rEmail').value.trim()
+  const password=document.getElementById('rPass').value
+  if(!name||!email||!password)return showAlert('regErr','Please fill all fields')
+  if(password.length<6)return showAlert('regErr','Password must be at least 6 characters')
+  const{data}=await apiFetch('/api/auth/register',{method:'POST',body:JSON.stringify({name,email,password})})
+  if(data.success){
+    setAuth(data.token,data.user)
+    showAlert('regOk','Account created! Redirecting…','success')
+    setTimeout(()=>window.location.href='packages.html',1000)
+  } else showAlert('regErr',data.message)
+}
 </script>
-</body>
-</html>
+</body></html>
